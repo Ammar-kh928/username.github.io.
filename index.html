@@ -6,7 +6,6 @@
 <title>تعرفه خدمات نقشه‌برداری — مخصوص نقشه‌برداران سلماس</title>
 
 <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/Vazirmatn-font-face.css" rel="stylesheet" />
-<link rel="manifest" href="manifest.json">
 
 <style>
 :root{
@@ -156,6 +155,7 @@ select:focus, input:focus{ outline:2px solid rgba(255,215,0,0.55); }
       </div>
       <div>
         <label>قیمت واحد</label>
+        <!-- قیمت واحد قابل ویرایش -->
         <input id="servicePriceBox" type="number" min="0" step="1000" class="price-box" />
       </div>
     </div>
@@ -272,12 +272,14 @@ select:focus, input:focus{ outline:2px solid rgba(255,215,0,0.55); }
 
     <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
       <button class="app-btn" id="btnPreviewInvoice" title="پیش نمایش فاکتور">پیش نمایش فاکتور</button>
+      <!-- دکمه چاپ دیگر اینجا نیست؛ به زیر پیش‌نمایش منتقل شده -->
     </div>
   </div>
 
   <!-- پیش‌نمایش فاکتور -->
   <div id="invoiceSection" style="display:none; margin-top:12px;">
     <div id="invoiceCard" class="card"></div>
+    <!-- دکمه چاپ منتقل‌شده به زیر پیش‌نمایش -->
     <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">
       <button class="app-btn" id="btnPrintSave" title="چاپ">چاپ</button>
     </div>
@@ -426,6 +428,7 @@ function getNextInvoiceNumber(){
   try { seq = Number(localStorage.getItem('invoice_seq')) || 1; } catch(e){ seq = 1; }
   const formattedSeq = String(seq).padStart(3,'0');
   const fullNumber = `${invoiceDatePrefix}-${formattedSeq}`;
+  // آماده افزایش برای فاکتور بعدی
   localStorage.setItem('invoice_seq', String(seq + 1));
   return fullNumber;
 }
@@ -567,7 +570,7 @@ uploadStamp.addEventListener('change', (e)=>{
   previewStamp.innerHTML = ''; previewStamp.appendChild(img);
 });
 
-/* ساخت HTML چاپ فاکتور — شامل نمایش فارسی شماره‌ها، کارت، و شماره‌گذاری خودکار */
+/* ساخت HTML چاپ فاکتور — شامل نمایش فارسی شماره‌ها و کارت، و شماره‌گذاری خودکار */
 function buildInvoiceHTML(engineer, engineerPhone, engineerCard, clientType, client, clientPhone, location, invNumber, invDate, rowsArr){
   let totalRial = 0;
   rowsArr.forEach(r=> totalRial += r.subtotal);
@@ -576,25 +579,33 @@ function buildInvoiceHTML(engineer, engineerPhone, engineerCard, clientType, cli
   const totalTomanFa = toFarsiNumber(totalToman);
   const totalTomanWords = numberToPersianWords(totalToman) + ' تومان';
 
+  // تبدیل نوع کارفرما برای نمایش در فاکتور
   const clientTypeDisplay = clientType === 'آقا' ? 'آقای' : (clientType === 'خانم' ? 'خانم' : 'شرکت');
 
   let html = '';
   html += `<div class="printable">`;
 
+  /* عنوان بولد و درشت */
   html += `<h2 style="margin:0 0 6px 0; text-align:center; font-size:22px; font-weight:800;">فاکتور خدمات نقشه‌برداری</h2>`;
+  /* مهندس + شماره تماس + شماره کارت (ارقام فارسی) */
   html += `<div style="text-align:center; margin-top:6px; font-weight:700;">مهندس ${engineer || '—'}</div>`;
   html += `<div style="text-align:center; margin-top:4px;">شماره تماس: ${engineerPhone ? toFarsiDigitsString(engineerPhone) : '—'}</div>`;
   html += `<div style="text-align:center; margin-top:4px;">شماره کارت: ${formatCardFarsi(engineerCard)}</div>`;
 
+  /* شماره فاکتور و تاریخ */
   html += `<div style="display:flex; justify-content:space-between; margin-top:8px;">
             <div>شماره فاکتور: ${toFarsiDigitsString(invNumber)}</div>
             <div>تاریخ: ${invDate}</div>
           </div>`;
 
+  /* کارفرما + شماره تماس (فارسی) */
   html += `<div style="margin-top:8px;"><strong>کارفرما:</strong> ${clientTypeDisplay} ${client || '—'}</div>`;
   html += `<div style="margin-top:4px;">شماره تماس: ${clientPhone ? toFarsiDigitsString(clientPhone) : '—'}</div>`;
+
+  /* موقعیت پروژه */
   html += `<div style="margin-top:8px;"><strong>موقعیت پروژه:</strong> ${location || '—'}</div>`;
 
+  /* جدول ردیف‌ها */
   html += `<div style="margin-top:12px; overflow:auto;">
   <table style="width:100%; border-collapse:collapse; border:1px solid #ccc;">
     <thead style="background:#f3f3f3;">
@@ -630,8 +641,10 @@ function buildInvoiceHTML(engineer, engineerPhone, engineerCard, clientType, cli
   </table>
 </div>`;
 
+  /* مبلغ به حروف و رقم فارسی */
   html += `<div style="margin-top:10px; font-weight:700; text-align:right;">مبلغ به حروف: ${totalTomanWords} — (${totalTomanFa} تومان)</div>`;
 
+  /* امضا و مهر */
   html += `<div style="display:flex; gap:12px; margin-top:18px; align-items:center;">
     <div style="flex:1; text-align:center;">
       <div>امضا مهندس</div>
@@ -674,8 +687,8 @@ document.getElementById('btnPreviewInvoice').addEventListener('click', ()=>{
   if(clientPhone && !clientPhoneInput.checkValidity()) return showStatus(clientPhoneInput.title, 'error');
   if(engineerCard && !engineerCardInput.checkValidity()) return showStatus(engineerCardInput.title, 'error');
 
-  const invNumber = getNextInvoiceNumber();
-  const invDate = getPersianDate();
+  const invNumber = getNextInvoiceNumber();      // شماره فاکتور خودکار
+  const invDate = getPersianDate();              // تاریخ شمسی
 
   const {html, snapshot} = buildInvoiceHTML(
     engineer, engineerPhone, engineerCard, clientType, clientName, clientPhone, location,
@@ -687,6 +700,7 @@ document.getElementById('btnPreviewInvoice').addEventListener('click', ()=>{
   invoiceSection.style.display = 'block';
   invoiceCard.innerHTML = html;
 
+  // درج امضا و مهر در خروجی چاپ
   const printSignDiv = document.getElementById('printSign');
   const printStampDiv = document.getElementById('printStamp');
   printSignDiv.innerHTML = '';
@@ -712,6 +726,7 @@ document.getElementById('btnPreviewInvoice').addEventListener('click', ()=>{
     printStampDiv.innerHTML = `<div style="color:#555; font-size:13px;">(مهر موجود نیست)</div>`;
   }
 
+  // ذخیره در localStorage
   let saved = [];
   try { saved = JSON.parse(localStorage.getItem('invoices') || '[]'); } catch(e){ saved = []; }
   saved.push(snapshot);
@@ -798,15 +813,6 @@ function deleteSavedInvoice(index){
   localStorage.setItem('invoices', JSON.stringify(saved));
   renderSavedInvoices();
   showStatus('فاکتور ذخیره‌شده حذف شد.', 'ok');
-}
-
-/* ثبت Service Worker برای PWA */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(() => {
-      console.log('Service Worker registered');
-    });
-  });
 }
 
 /* شروع */
