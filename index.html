@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>تعرفه خدمات نقشه‌برداری — مخصوص نقشه‌برداران سلماس</title>
+
+<link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/Vazirmatn-font-face.css" rel="stylesheet" />
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root{
+  --bg:#001F3F;
+  --card:#002A55;
+  --accent:#FFD700;
+  --primary:#001F3F;
+  --muted:#94a3b8;
+  --text:#e6eef6;
+  --radius:12px;
+  --gap:12px;
+  --shadow: 0 6px 20px rgba(0,0,0,0.6);
+  --danger:#ff6b6b;
+  --success:#22c55e;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"Vazirmatn","Tahoma",sans-serif; padding:12px;
+  display:flex; justify-content:center;
+}
+.app{ width:100%; max-width:980px; }
+
+/* header */
+.header{display:flex; flex-direction:column; gap:6px; align-items:center; margin-bottom:8px;}
+.app-title{
+  background:linear-gradient(90deg,var(--primary),#001A2A);
+  width:100%; color:var(--accent); border-radius:14px; padding:18px 16px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.6); text-align:center;
+}
+.app-title .title-text{
+  font-size:22px; font-weight:900; letter-spacing:0.3px;
+}
+.app-sub{ color:var(--muted); font-size:13px; margin-top:6px; text-align:center; }
+
+/* status bar */
+.status{
+  position:sticky; top:8px; z-index:50;
+  margin:8px 0; padding:10px 12px; border-radius:10px;
+  background:rgba(255,215,0,0.08); border:1px solid rgba(255,215,0,0.25);
+  color:var(--accent); font-weight:800; display:none;
+}
+.status.error{ background:rgba(255,107,107,0.12); border-color: rgba(255,107,107,0.45); color:#ffd1d1; }
+.status.ok{ background:rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.45); color:#b6f3c8; }
+
+/* card */
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:var(--radius); padding:14px; margin-bottom:var(--gap);
+  box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03);
+}
+
+.grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.full{ grid-column:1/-1; }
+
+label{display:block; font-weight:700; font-size:13px; color:var(--accent); margin-bottom:6px}
+
+/* inputs and selects + price box */
+select,input[type="number"],input[type="text"], input[type="file"], .price-box{
+  width:100%; padding:10px 12px; border-radius:10px; border:none; background:#002A55; color:var(--text);
+  font-size:15px; outline: 2px solid transparent;
+  border:1px solid rgba(255,215,0,0.4);
+}
+select:focus, input:focus{ outline:2px solid rgba(255,215,0,0.55); }
+
+/* price box input */
+.price-box{
+  background:linear-gradient(180deg,#001A2A,#002244);
+  color:var(--accent); font-weight:800; text-align:center;
+}
+
+/* buttons */
+.btn-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; margin-top:10px;}
+.app-btn{
+  display:flex; align-items:center; justify-content:center;
+  min-width:96px; padding:10px; gap:6px; border-radius:10px; background:var(--primary);
+  color:white; font-weight:800; border:2px solid var(--accent); cursor:pointer;
+}
+.app-btn.small{ min-width:auto; padding:8px 10px; font-size:13px; }
+.app-btn.danger{ border-color: var(--danger); }
+
+/* table */
+.table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+.table th{ text-align:center; padding:8px; color:var(--muted); font-weight:700; border-bottom:1px solid rgba(255,255,255,0.08)}
+.table td{ padding:8px; text-align:center; border-bottom:1px dashed rgba(255,255,255,0.06); color:var(--text)}
+.table td.service{ text-align:right; overflow:hidden; word-break:break-word;}
+
+/* invoice preview section */
+#invoiceSection{
+  display:none;
+  padding:18px;
+  border-radius:10px;
+  background:linear-gradient(180deg, rgba(0,31,63,0.06), rgba(0,31,63,0.02));
+  border:1px solid rgba(255,215,0,0.08);
+  color:var(--text);
+}
+#invoiceCard{
+  background:linear-gradient(180deg,#071a25,#06202b);
+  color:var(--text);
+  padding:18px; border-radius:10px;
+}
+
+/* printable wrapper */
+.printable{
+  background:#fff; color:#000; padding:14px; border-radius:6px;
+}
+
+/* preview image box */
+.preview-img{ max-width:160px; max-height:100px; border:1px solid rgba(0,0,0,0.15); display:block }
+
+/* print */
+@media print{
+  .app *{ visibility:hidden; }
+  #invoiceSection, #invoiceSection *{ visibility: visible !important; }
+  #invoiceSection{ position:absolute; top:0; right:0; width:100%; padding:20px; box-sizing:border-box; background:white; color:black; }
+  .no-print { display:none !important; }
+  table td, table th { padding:6px; font-size:12px; color:black; }
+}
+
+/* responsive */
+@media (max-width:520px){
+  .grid-2{ grid-template-columns:1fr; }
+  .app-btn{ min-width:80px; padding:10px 8px; }
+  #rowsTable th:nth-child(4), #rowsTable td:nth-child(4),
+  #rowsTable th:nth-child(5), #rowsTable td:nth-child(5){ display:none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="app-title card">
+      <div class="title-text">تعرفه خدمات نقشه‌برداری</div>
+      <div class="app-sub">مخصوص نقشه‌برداران سلماس</div>
+    </div>
+    <div id="statusBar" class="status" role="alert"></div>
+  </div>
+
+  <!-- فرم اصلی -->
+  <div class="card">
+    <div class="grid-2">
+      <div>
+        <label>نوع خدمت</label>
+        <select id="serviceSelect" aria-label="نوع خدمت"></select>
+      </div>
+      <div>
+        <label>قیمت واحد</label>
+        <input id="servicePriceBox" type="number" min="0" step="1000" class="price-box" />
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div>
+        <label>تعداد قطعات</label>
+        <input id="pieces" type="number" min="1" step="1" inputmode="numeric" placeholder="مثلاً 2" />
+      </div>
+      <div>
+        <label>متراژ هر قطعه (متر مربع)</label>
+        <input id="area" type="number" min="0" step="0.01" inputmode="decimal" placeholder="مثلاً 250" />
+      </div>
+    </div>
+
+    <div class="btn-row no-print" style="margin-top:6px">
+      <button class="app-btn" id="btnCalc" title="محاسبه">محاسبه</button>
+      <button class="app-btn" id="btnConfirm" title="تأیید ردیف">تأیید ردیف</button>
+      <button class="app-btn" id="btnAddNew" title="افزودن مورد جدید">افزودن جدید</button>
+
+      <div style="margin-left:auto; display:flex; align-items:center; gap:10px">
+        <div style="text-align:center; font-weight:800; color:var(--accent)">
+          <div style="font-size:12px; color:var(--muted)">مبلغ جاری</div>
+          <div id="calcResult" style="font-size:16px">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- جدول خدمات -->
+  <div class="card">
+    <h3 style="margin-top:0">فهرست خدمات افزوده‌شده</h3>
+    <div style="overflow:auto">
+      <table class="table" id="rowsTable" aria-label="فهرست خدمات">
+        <thead>
+          <tr><th>ردیف</th><th>شرح خدمت</th><th>تعداد</th><th>متراژ</th><th>قیمت واحد</th><th>جمع</th><th>حذف</th></tr>
+        </thead>
+        <tbody id="rowsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer-actions" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-weight:900; color:var(--accent)">
+        <div style="font-size:12px; color:var(--muted)">جمع کل</div>
+        <div id="grandTotal" style="font-size:18px">۰</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="app-btn" id="btnInvoice" title="صدور فاکتور">صدور فاکتور</button>
+        <button class="app-btn danger" id="btnClear" title="پاک کردن همه">پاک کردن همه</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- فرم فاکتور -->
+  <div class="card" id="invoiceForm" style="display:none;">
+    <h3 style="margin-top:0; color:var(--accent)">صدور فاکتور</h3>
+
+    <div class="grid-2">
+      <div>
+        <label>نام و نام خانوادگی مهندس</label>
+        <input id="engineerName" type="text" placeholder="مثلاً مهندس عمار خسروپور" />
+      </div>
+      <div>
+        <label>شماره موبایل مهندس</label>
+        <input id="engineerPhone" type="text" placeholder="۰۹۱۴۳۸۸۹۹۷۰" pattern="09[0-9]{9}" title="شماره موبایل معتبر وارد کنید (11 رقم با 09)" />
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div class="full">
+        <label>شماره کارت مهندس</label>
+        <input id="engineerCard" type="text" placeholder="شماره کارت ۱۶ رقمی" pattern="[0-9]{16}" title="شماره کارت باید ۱۶ رقم باشد" />
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px">
+      <div>
+        <label>نوع کارفرما</label>
+        <select id="clientType">
+          <option value="آقا">آقا</option>
+          <option value="خانم">خانم</option>
+          <option value="شرکت">شرکت</option>
+        </select>
+      </div>
+      <div>
+        <label>نام و نام خانوادگی کارفرما</label>
+        <input id="clientName" type="text" placeholder="..." />
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px">
+      <div>
+        <label>شماره موبایل کارفرما</label>
+        <input id="clientPhone" type="text" placeholder="۰۹xxxxxxxxx" pattern="09[0-9]{9}" title="شماره موبایل معتبر وارد کنید (11 رقم با 09)" />
+      </div>
+      <div class="full">
+        <label>آدرس / موقعیت پروژه</label>
+        <input id="projectLocation" type="text" placeholder="مثلاً سلماس، خیابان امام..." />
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px">
+      <div>
+        <label>آپلود امضا مهندس</label>
+        <input id="uploadSign" type="file" accept="image/*" class="no-print" />
+        <div id="previewSign" style="margin-top:8px"></div>
+      </div>
+      <div>
+        <label>آپلود مهر / لوگو</label>
+        <input id="uploadStamp" type="file" accept="image/*" class="no-print" />
+        <div id="previewStamp" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="app-btn" id="btnPreviewInvoice" title="پیش نمایش فاکتور">پیش نمایش فاکتور</button>
+    </div>
+  </div>
+
+  <!-- پیش‌نمایش فاکتور -->
+  <div id="invoiceSection" style="display:none; margin-top:12px;">
+    <div id="invoiceCard" class="card"></div>
+    <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:8px;">
+      <button class="app-btn" id="btnPrintSave" title="چاپ">چاپ</button>
+    </div>
+  </div>
+
+  <!-- فاکتورهای ذخیره‌شده -->
+  <div class="card" id="savedInvoicesCard" style="display:none; margin-top:12px;">
+    <h3 style="margin-top:0; color:var(--accent)">فاکتورهای ذخیره‌شده</h3>
+    <div id="savedInvoicesList"></div>
+  </div>
+
+</div>
+
+<script>
+/* داده‌ها: فهرست خدمات */
+const serviceList = [
+  {name:"تهیه نقشه UTM برای عرصه کمتر از 500 متر (داخل محدوده شهر)", price:12000000, unitType:"per_lot"},
+  {name:"تهیه نقشه UTM برای عرصه بیشتر از 500 متر (داخل محدوده شهر)", price:22000000, unitType:"per_lot"},
+  {name:"تهیه نقشه UTM برای عرصه کمتر از 1000 متر (خارج از محدوده شهر)", price:15000000, unitType:"per_lot"},
+  {name:"تهیه نقشه UTM برای عرصه 1000متر تا 1 هکتار (خارج از محدوده شهر)", price:30000000, unitType:"per_lot"},
+  {name:"تهیه نقشه UTM برای عرصه 1 هکتار تا 3 هکتار (خارج از محدوده شهر)", price:50000000, unitType:"per_lot"},
+  {name:"تهیه نقشه UTM برای عرصه بیشتر از 3 هکتار (خارج از محدوده شهر)", price:60000000, unitType:"per_lot"},
+  {name:"تفکیک زمین های زراعی و باغ (به ازای هر قطعه)", price:7500000, unitType:"per_piece"},
+  {name:"تفکیک زمین به قطعات مسکونی (به ازای هر قطعه)", price:40000000, unitType:"per_piece"},
+  {name:"تفکیک زمین به قطعات تجاری (به ازای هر قطعه)", price:30000000, unitType:"per_piece"},
+  {name:"برداشت زمین های زراعی و باغ زیر 2000 متر مربع", price:12000000, unitType:"per_lot"},
+  {name:"برداشت زمین های زراعی و باغ از 2000 تا 5000 متر مربع", price:15000000, unitType:"per_lot"},
+  {name:"برداشت زمین های زراعی و باغ از 5000 متر مربع تا 1 هکتار", price:20000000, unitType:"per_lot"},
+  {name:"برداشت زمین های زراعی و باغ از 1 هکتار تا 3 هکتار", price:30000000, unitType:"per_lot"},
+  {name:"برداشت زمین های زراعی و باغ بیشتر از 3 هکتار", price:40000000, unitType:"per_lot"},
+  {name:"برداشت و تهیه نقشه UTM واحد صنفی کوچک (عرصه)", price:30000000, unitType:"per_lot"},
+  {name:"برداشت و تهیه نقشه UTM واحد صنفی کوچک (عرصه و عیان)", price:50000000, unitType:"per_lot"},
+  {name:"برداشت و تهیه نقشه UTM واحد صنفی بزرگ (عرصه)", price:60000000, unitType:"per_lot"},
+  {name:"برداشت و تهیه نقشه UTM واحد صنفی بزرگ (عرصه و عیان)", price:100000000, unitType:"per_lot"},
+  {name:"پیاده سازی هر قطعه تجاری (داخل محدوده شهر)", price:12000000, unitType:"per_piece"},
+  {name:"پیاده سازی هر قطعه تجاری (خارج از محدوده شهر)", price:15000000, unitType:"per_piece"},
+  {name:"پیاده سازی هر قطعه مسکونی (داخل محدوده شهر)", price:10000000, unitType:"per_piece"},
+  {name:"پیاده سازی هر قطعه مسکونی (خارج از محدوده شهر)", price:12000000, unitType:"per_piece"},
+  {name:"پیاده سازی ستون‌های ساختمان تا 10 ستون", price:20000000, unitType:"per_piece"},
+  {name:"پیاده سازی ستون‌های ساختمان از 11 تا 20 ستون", price:35000000, unitType:"per_piece"},
+  {name:"پیاده سازی ستون‌های ساختمان از 21 تا 30 ستون", price:50000000, unitType:"per_piece"}
+];
+
+/* عناصر DOM */
+const svcSel = document.getElementById('serviceSelect');
+const servicePriceBox = document.getElementById('servicePriceBox');
+const piecesInput = document.getElementById('pieces');
+const areaInput = document.getElementById('area');
+const rowsBody = document.getElementById('rowsBody');
+const grandTotalEl = document.getElementById('grandTotal');
+const calcResultEl = document.getElementById('calcResult');
+const statusBar = document.getElementById('statusBar');
+
+/* پرکردن لیست خدمات */
+serviceList.forEach((s, idx) => {
+  const opt = document.createElement('option');
+  opt.value = idx;
+  opt.textContent = s.name;
+  svcSel.appendChild(opt);
+});
+
+/* ابزارها: وضعیت، تبدیل‌ها و تاریخ */
+function showStatus(msg, type='ok'){
+  statusBar.textContent = msg;
+  statusBar.className = 'status ' + (type === 'error' ? 'error' : 'ok');
+  statusBar.style.display = 'block';
+  setTimeout(()=>{ statusBar.style.display = 'none'; }, 4000);
+}
+function toFarsiNumber(n){
+  if (n === null || n === undefined || n === '') return '—';
+  const num = Number(n);
+  if (!isFinite(num)) return '—';
+  return num.toLocaleString('fa-IR');
+}
+/* تبدیل ارقام انگلیسی به فارسی بدون از دست دادن صفرهای ابتدایی */
+function toFarsiDigitsString(str){
+  if (str === null || str === undefined) return '—';
+  str = String(str);
+  const map = {'0':'۰','1':'۱','2':'۲','3':'۳','4':'۴','5':'۵','6':'۶','7':'۷','8':'۸','9':'۹'};
+  return str.replace(/[0-9]/g, d => map[d]);
+}
+/* فرمت شماره کارت 16 رقمی به صورت 4-4-4-4 با ارقام فارسی */
+function formatCardFarsi(card){
+  if (!card) return '—';
+  const digits = String(card).replace(/\D/g,'').slice(0,16);
+  if (digits.length < 16) return toFarsiDigitsString(digits);
+  const grouped = digits.replace(/(\d{4})(\d{4})(\d{4})(\d{4})/, '$1-$2-$3-$4');
+  return toFarsiDigitsString(grouped);
+}
+function getPersianDate(){
+  return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'long',day:'numeric'}).format(new Date());
+}
+function numberToPersianWords(num){
+  if(!isFinite(num)) return '';
+  num = Math.floor(num);
+  if(num === 0) return 'صفر';
+  const ones = ['','یک','دو','سه','چهار','پنج','شش','هفت','هشت','نه'];
+  const teens = ['ده','یازده','دوازده','سیزده','چهارده','پانزده','شانزده','هفده','هجده','نوزده'];
+  const tens = ['','','بیست','سی','چهل','پنجاه','شصت','هفتاد','هشتاد','نود'];
+  const hundreds = ['','یکصد','دویست','سیصد','چهارصد','پانصد','ششصد','هفتصد','هشتصد','نهصد'];
+  const scales = [
+    {value:1000000000, text:'میلیارد'},
+    {value:1000000, text:'میلیون'},
+    {value:1000, text:'هزار'},
+    {value:1, text:''}
+  ];
+  function threeDigits(n){
+    let out = [];
+    const h = Math.floor(n/100);
+    const rem = n%100;
+    if(h) out.push(hundreds[h]);
+    if(rem >= 10 && rem < 20){ out.push(teens[rem-10]); }
+    else {
+      const t = Math.floor(rem/10);
+      const o = rem%10;
+      if(t) out.push(tens[t]);
+      if(o) out.push(ones[o]);
+    }
+    return out.filter(Boolean).join(' و ');
+  }
+  let parts = [];
+  for(const s of scales){
+    if(num >= s.value){
+      const count = Math.floor(num / s.value);
+      num = num % s.value;
+      if(s.value === 1){
+        if(count>0) parts.push(threeDigits(count));
+      } else {
+        if(count>0){
+          const chunk = threeDigits(count);
+          parts.push(chunk + (s.text ? ' ' + s.text : ''));
+        }
+      }
+    }
+  }
+  return parts.join(' و ');
+}
+
+/* وضعیت ردیف‌ها */
+let rows = [];
+
+/* شماره فاکتور خودکار با فرمت تاریخ-شماره ترتیبی */
+const invoiceDatePrefix = '1404/10/01'; // شروع طبق درخواست
+function getNextInvoiceNumber(){
+  let seq = 1;
+  try { seq = Number(localStorage.getItem('invoice_seq')) || 1; } catch(e){ seq = 1; }
+  const formattedSeq = String(seq).padStart(3,'0');
+  const fullNumber = `${invoiceDatePrefix}-${formattedSeq}`;
+  localStorage.setItem('invoice_seq', String(seq + 1));
+  return fullNumber;
+}
+
+/* به‌روزرسانی قیمت واحد بر اساس خدمت انتخابی */
+function updatePriceBox(){
+  const s = serviceList[Number(svcSel.value)];
+  servicePriceBox.value = s ? s.price : 0;
+}
+svcSel.addEventListener('change', updatePriceBox);
+updatePriceBox();
+
+/* پاکسازی ورودی‌ها */
+piecesInput.addEventListener('input', ()=>{
+  let v = Math.floor(Number(piecesInput.value || 0));
+  if (v < 1) v = 1;
+  piecesInput.value = v;
+});
+areaInput.addEventListener('input', ()=>{
+  let v = Number(areaInput.value || 0);
+  if (v < 0) v = 0;
+  areaInput.value = v;
+});
+
+/* محاسبه مبلغ جاری */
+document.getElementById('btnCalc').addEventListener('click', () => {
+  const s = serviceList[Number(svcSel.value)];
+  if(!s) return showStatus('لطفاً یک خدمت انتخاب کنید.', 'error');
+  const unitPrice = Number(servicePriceBox.value) || s.price;
+  const pieces = Number(piecesInput.value) || 0;
+  const area = Number(areaInput.value) || 0;
+
+  if (s.unitType === 'per_piece' && pieces < 1) return showStatus('تعداد قطعات باید حداقل ۱ باشد.', 'error');
+  if (s.unitType === 'per_area' && area < 0) return showStatus('متراژ نمی‌تواند منفی باشد.', 'error');
+
+  let subtotal = 0;
+  if(s.unitType === 'per_piece') subtotal = unitPrice * (pieces || 1);
+  else if(s.unitType === 'per_area') subtotal = unitPrice * (area || 0);
+  else subtotal = unitPrice;
+
+  calcResultEl.textContent = toFarsiNumber(subtotal) + ' ریال';
+  calcResultEl.dataset.value = subtotal;
+});
+
+/* تایید ردیف */
+document.getElementById('btnConfirm').addEventListener('click', () => {
+  const s = serviceList[Number(svcSel.value)];
+  if(!s) return showStatus('لطفاً یک خدمت انتخاب کنید.', 'error');
+  const unitPrice = Number(servicePriceBox.value) || s.price;
+  const pieces = Number(piecesInput.value) || 0;
+  const area = Number(areaInput.value) || 0;
+
+  if (s.unitType === 'per_piece' && pieces < 1) return showStatus('تعداد قطعات باید حداقل ۱ باشد.', 'error');
+  if (s.unitType === 'per_area' && area < 0) return showStatus('متراژ نمی‌تواند منفی باشد.', 'error');
+
+  let qty = 1;
+  let subtotal = 0;
+  if(s.unitType === 'per_piece'){ qty = pieces || 1; subtotal = unitPrice * qty; }
+  else if(s.unitType === 'per_area'){ qty = area || 0; subtotal = unitPrice * qty; }
+  else { qty = 1; subtotal = unitPrice; }
+
+  rows.push({name: s.name, qty: qty, area: area, price: unitPrice, subtotal: subtotal});
+  renderRows();
+  calcResultEl.textContent = '—';
+  delete calcResultEl.dataset.value;
+  showStatus('ردیف با موفقیت افزوده شد.', 'ok');
+});
+
+/* افزودن جدید */
+document.getElementById('btnAddNew').addEventListener('click', () => {
+  svcSel.selectedIndex = 0;
+  updatePriceBox();
+  piecesInput.value = '';
+  areaInput.value = '';
+  calcResultEl.textContent = '—';
+  delete calcResultEl.dataset.value;
+});
+
+/* رندر جدول ردیف‌ها */
+function renderRows(){
+  rowsBody.innerHTML = '';
+  let sum = 0;
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${toFarsiNumber(i+1)}</td>
+      <td class="service" style="text-align:right; padding-left:8px;">${r.name}</td>
+      <td>${toFarsiNumber(r.qty)}</td>
+      <td>${toFarsiNumber(r.area)}</td>
+      <td>${toFarsiNumber(r.price)}</td>
+      <td>${toFarsiNumber(r.subtotal)}</td>
+      <td><button class="app-btn small danger" onclick="removeRow(${i})">حذف</button></td>
+    `;
+    rowsBody.appendChild(tr);
+    sum += r.subtotal;
+  });
+  grandTotalEl.textContent = toFarsiNumber(sum) + ' ریال';
+}
+function removeRow(i){ rows.splice(i,1); renderRows(); }
+
+/* پاک کردن همه ردیف‌ها */
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  if(confirm('آیا مطمئن هستید همه ردیف‌ها پاک شود؟')){
+    rows = [];
+    renderRows();
+    showStatus('همه ردیف‌ها پاک شد.', 'ok');
+  }
+});
+
+/* نمایش فرم فاکتور */
+document.getElementById('btnInvoice').addEventListener('click', () => {
+  if(rows.length === 0){ return showStatus('لطفاً حداقل یک ردیف اضافه کنید.', 'error'); }
+  document.getElementById('invoiceForm').style.display = 'block';
+  setTimeout(()=> { document.getElementById('invoiceForm').scrollIntoView({behavior:'smooth'}); }, 60);
+});
+
+/* پیش‌نمایش تصاویر امضا و مهر */
+const uploadSign = document.getElementById('uploadSign');
+const uploadStamp = document.getElementById('uploadStamp');
+const previewSign = document.getElementById('previewSign');
+const previewStamp = document.getElementById('previewStamp');
+
+uploadSign.addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f){ previewSign.innerHTML = ''; return; }
+  const url = URL.createObjectURL(f);
+  const img = document.createElement('img');
+  img.src = url; img.className = 'preview-img';
+  img.onload = ()=> URL.revokeObjectURL(url);
+  previewSign.innerHTML = ''; previewSign.appendChild(img);
+});
+uploadStamp.addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f){ previewStamp.innerHTML = ''; return; }
+  const url = URL.createObjectURL(f);
+  const img = document.createElement('img');
+  img.src = url; img.className = 'preview-img';
+  img.onload = ()=> URL.revokeObjectURL(url);
+  previewStamp.innerHTML = ''; previewStamp.appendChild(img);
+});
+
+/* ساخت HTML چاپ فاکتور — شامل نمایش فارسی شماره‌ها، کارت، و شماره‌گذاری خودکار */
+function buildInvoiceHTML(engineer, engineerPhone, engineerCard, clientType, client, clientPhone, location, invNumber, invDate, rowsArr){
+  let totalRial = 0;
+  rowsArr.forEach(r=> totalRial += r.subtotal);
+  const totalRialFa = toFarsiNumber(totalRial);
+  const totalToman = Math.round(totalRial / 10);
+  const totalTomanFa = toFarsiNumber(totalToman);
+  const totalTomanWords = numberToPersianWords(totalToman) + ' تومان';
+
+  const clientTypeDisplay = clientType === 'آقا' ? 'آقای' : (clientType === 'خانم' ? 'خانم' : 'شرکت');
+
+  let html = '';
+  html += `<div class="printable">`;
+
+  html += `<h2 style="margin:0 0 6px 0; text-align:center; font-size:22px; font-weight:800;">فاکتور خدمات نقشه‌برداری</h2>`;
+  html += `<div style="text-align:center; margin-top:6px; font-weight:700;">مهندس ${engineer || '—'}</div>`;
+  html += `<div style="text-align:center; margin-top:4px;">شماره تماس: ${engineerPhone ? toFarsiDigitsString(engineerPhone) : '—'}</div>`;
+  html += `<div style="text-align:center; margin-top:4px;">شماره کارت: ${formatCardFarsi(engineerCard)}</div>`;
+
+  html += `<div style="display:flex; justify-content:space-between; margin-top:8px;">
+            <div>شماره فاکتور: ${toFarsiDigitsString(invNumber)}</div>
+            <div>تاریخ: ${invDate}</div>
+          </div>`;
+
+  html += `<div style="margin-top:8px;"><strong>کارفرما:</strong> ${clientTypeDisplay} ${client || '—'}</div>`;
+  html += `<div style="margin-top:4px;">شماره تماس: ${clientPhone ? toFarsiDigitsString(clientPhone) : '—'}</div>`;
+  html += `<div style="margin-top:8px;"><strong>موقعیت پروژه:</strong> ${location || '—'}</div>`;
+
+  html += `<div style="margin-top:12px; overflow:auto;">
+  <table style="width:100%; border-collapse:collapse; border:1px solid #ccc;">
+    <thead style="background:#f3f3f3;">
+      <tr>
+        <th style="padding:6px; border:1px solid #ddd;">ردیف</th>
+        <th style="padding:6px; border:1px solid #ddd; text-align:right;">خدمت</th>
+        <th style="padding:6px; border:1px solid #ddd;">تعداد</th>
+        <th style="padding:6px; border:1px solid #ddd;">متراژ</th>
+        <th style="padding:6px; border:1px solid #ddd;">قیمت واحد (ریال)</th>
+        <th style="padding:6px; border:1px solid #ddd;">جمع (ریال)</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  rowsArr.forEach((r,i)=>{
+    html += `<tr>
+      <td style="padding:6px; border:1px solid #ddd; text-align:center;">${toFarsiNumber(i+1)}</td>
+      <td style="padding:6px; border:1px solid #ddd; text-align:right;">${r.name}</td>
+      <td style="padding:6px; border:1px solid #ddd; text-align:center;">${toFarsiNumber(r.qty)}</td>
+      <td style="padding:6px; border:1px solid #ddd; text-align:center;">${toFarsiNumber(r.area)}</td>
+      <td style="padding:6px; border:1px solid #ddd; text-align:center;">${toFarsiNumber(r.price)}</td>
+      <td style="padding:6px; border:1px solid #ddd; text-align:center;">${toFarsiNumber(r.subtotal)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" style="padding:6px; border:1px solid #ddd; text-align:right; font-weight:700;">جمع کل</td>
+        <td style="padding:6px; border:1px solid #ddd; text-align:center; font-weight:700;">${totalRialFa}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>`;
+
+  html += `<div style="margin-top:10px; font-weight:700; text-align:right;">مبلغ به حروف: ${totalTomanWords} — (${totalTomanFa} تومان)</div>`;
+
+  html += `<div style="display:flex; gap:12px; margin-top:18px; align-items:center;">
+    <div style="flex:1; text-align:center;">
+      <div>امضا مهندس</div>
+      <div id="printSign" style="margin-top:8px;"></div>
+    </div>
+    <div style="flex:1; text-align:center;">
+      <div>مهر / لوگو</div>
+      <div id="printStamp" style="margin-top:8px;"></div>
+    </div>
+  </div>`;
+
+  html += `<p style="text-align:center; margin-top:18px; font-size:13px;">کلیه حقوق این برنامه متعلق به مهندس عمار خسروپور — ${toFarsiDigitsString('09143889970')}</p>`;
+  html += `</div>`;
+
+  return {
+    html,
+    snapshot:{
+      engineer, engineerPhone, engineerCard, clientType, client, clientPhone, location,
+      invNumber, invDate, rows: rowsArr, totalRial
+    }
+  };
+}
+
+/* پیش‌نمایش فاکتور + ذخیره */
+document.getElementById('btnPreviewInvoice').addEventListener('click', ()=>{
+  const engineer = document.getElementById('engineerName').value.trim();
+  const engineerPhoneInput = document.getElementById('engineerPhone');
+  const engineerPhone = engineerPhoneInput.value.trim();
+  const engineerCardInput = document.getElementById('engineerCard');
+  const engineerCard = engineerCardInput.value.trim();
+  const clientType = document.getElementById('clientType').value;
+  const clientName = document.getElementById('clientName').value.trim();
+  const clientPhoneInput = document.getElementById('clientPhone');
+  const clientPhone = clientPhoneInput.value.trim();
+  const location = document.getElementById('projectLocation').value.trim();
+
+  if(!engineer){ return showStatus('نام و نام خانوادگی مهندس را وارد کنید.', 'error'); }
+  if(!clientName){ return showStatus('نام و نام خانوادگی کارفرما را وارد کنید.', 'error'); }
+  if(engineerPhone && !engineerPhoneInput.checkValidity()) return showStatus(engineerPhoneInput.title, 'error');
+  if(clientPhone && !clientPhoneInput.checkValidity()) return showStatus(clientPhoneInput.title, 'error');
+  if(engineerCard && !engineerCardInput.checkValidity()) return showStatus(engineerCardInput.title, 'error');
+
+  const invNumber = getNextInvoiceNumber();
+  const invDate = getPersianDate();
+
+  const {html, snapshot} = buildInvoiceHTML(
+    engineer, engineerPhone, engineerCard, clientType, clientName, clientPhone, location,
+    invNumber, invDate, rows
+  );
+
+  const invoiceSection = document.getElementById('invoiceSection');
+  const invoiceCard = document.getElementById('invoiceCard');
+  invoiceSection.style.display = 'block';
+  invoiceCard.innerHTML = html;
+
+  const printSignDiv = document.getElementById('printSign');
+  const printStampDiv = document.getElementById('printStamp');
+  printSignDiv.innerHTML = '';
+  printStampDiv.innerHTML = '';
+  const signFile = uploadSign.files[0];
+  const stampFile = uploadStamp.files[0];
+  if(signFile){
+    const url = URL.createObjectURL(signFile);
+    const img = document.createElement('img');
+    img.style.maxWidth = '180px'; img.style.maxHeight = '120px'; img.src = url;
+    img.onload = ()=> URL.revokeObjectURL(url);
+    printSignDiv.appendChild(img);
+  } else {
+    printSignDiv.innerHTML = `<div style="color:#555; font-size:13px;">(امضا موجود نیست)</div>`;
+  }
+  if(stampFile){
+    const url2 = URL.createObjectURL(stampFile);
+    const img2 = document.createElement('img');
+    img2.style.maxWidth = '180px'; img2.style.maxHeight = '120px'; img2.src = url2;
+    img2.onload = ()=> URL.revokeObjectURL(url2);
+    printStampDiv.appendChild(img2);
+  } else {
+    printStampDiv.innerHTML = `<div style="color:#555; font-size:13px;">(مهر موجود نیست)</div>`;
+  }
+
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('invoices') || '[]'); } catch(e){ saved = []; }
+  saved.push(snapshot);
+  localStorage.setItem('invoices', JSON.stringify(saved));
+  renderSavedInvoices();
+
+  setTimeout(()=>{ invoiceSection.scrollIntoView({behavior:'smooth'}); }, 60);
+});
+
+/* چاپ */
+document.getElementById('btnPrintSave').addEventListener('click', ()=>{
+  if(document.getElementById('invoiceSection').style.display !== 'block'){
+    return showStatus('ابتدا فاکتور را پیش‌نمایش کنید.', 'error');
+  }
+  window.print();
+});
+
+/* لیست فاکتورهای ذخیره‌شده */
+function renderSavedInvoices(){
+  const card = document.getElementById('savedInvoicesCard');
+  const list = document.getElementById('savedInvoicesList');
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('invoices') || '[]'); } catch(e){ saved = []; }
+
+  if(saved.length === 0){
+    card.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  card.style.display = 'block';
+  list.innerHTML = '';
+
+  saved.forEach((inv, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.padding = '10px';
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div><strong>شماره فاکتور:</strong> ${toFarsiDigitsString(inv.invNumber)}</div>
+          <div><strong>تاریخ:</strong> ${inv.invDate}</div>
+          <div><strong>مهندس:</strong> ${inv.engineer}</div>
+          <div><strong>کارفرما:</strong> ${ (inv.clientType === 'آقا' ? 'آقای' : inv.clientType === 'خانم' ? 'خانم' : 'شرکت') } ${inv.client}</div>
+          <div><strong>جمع کل:</strong> ${toFarsiNumber(inv.totalRial)} ریال</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="app-btn small" onclick="viewSavedInvoice(${idx})">مشاهده</button>
+          <button class="app-btn small danger" onclick="deleteSavedInvoice(${idx})">حذف</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function viewSavedInvoice(index){
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('invoices') || '[]'); } catch(e){ saved = []; }
+  const inv = saved[index];
+  if(!inv) return;
+
+  const {html} = buildInvoiceHTML(
+    inv.engineer, inv.engineerPhone, inv.engineerCard, inv.clientType, inv.client, inv.clientPhone, inv.location,
+    inv.invNumber, inv.invDate, inv.rows
+  );
+
+  const invoiceSection = document.getElementById('invoiceSection');
+  const invoiceCard = document.getElementById('invoiceCard');
+  invoiceSection.style.display = 'block';
+  invoiceCard.innerHTML = html;
+
+  const printSignDiv = document.getElementById('printSign');
+  const printStampDiv = document.getElementById('printStamp');
+  printSignDiv.innerHTML = `<div style="color:#555; font-size:13px;">(امضا موجود نیست)</div>`;
+  printStampDiv.innerHTML = `<div style="color:#555; font-size:13px;">(مهر موجود نیست)</div>`;
+
+  setTimeout(()=>{ invoiceSection.scrollIntoView({behavior:'smooth'}); }, 60);
+}
+
+function deleteSavedInvoice(index){
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('invoices') || '[]'); } catch(e){ saved = []; }
+  saved.splice(index,1);
+  localStorage.setItem('invoices', JSON.stringify(saved));
+  renderSavedInvoices();
+  showStatus('فاکتور ذخیره‌شده حذف شد.', 'ok');
+}
+
+/* ثبت Service Worker برای PWA */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('Service Worker registered');
+    });
+  });
+}
+
+/* شروع */
+renderRows();
+renderSavedInvoices();
+</script>
+</body>
+</html>
